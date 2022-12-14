@@ -28,7 +28,7 @@
     "no-dupe-args": "error",
     "no-fallthrough": "error",
     "no-unreachable": "error",
-    "no-unused-vars": "error",
+    // "no-unused-vars": "error",
     "use-isnan": "error",
     "camelcase": "error",
     "default-case": "error",
@@ -38,7 +38,7 @@
     "no-empty-function": "error",
     "no-eq-null": "error",
     "no-extra-semi": "error",
-    "no-extra-parens": "error",
+    // "no-extra-parens": "error",
     "no-var": "warn",
     "prefer-arrow-callback": "error",
     "prefer-const": "warn"

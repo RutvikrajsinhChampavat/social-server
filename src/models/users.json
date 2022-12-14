@@ -1,0 +1,17 @@
+[
+  {
+    "id": 0,
+    "username": "Raj",
+    "password": "$2b$10$hgGylSvn2JcNJlK5NTvBheU1dAHOO6Clua8MRZeqSNbzbNu.Lh5qC"
+  },
+  {
+    "id": 1,
+    "username": "Mahesh",
+    "password": "$2b$10$Q6tJexqxeqB.22L2/q49BeJfcX0vP3ywpDcxtyWVVSeCHbIgVihm6"
+  },
+  {
+    "id": 2,
+    "username": "Rohan",
+    "password": "$2b$10$4m9hW4pvQKuYkSesYf2p.OMWgqDCZ06KoHChv7mDalCYdp7ChuMs."
+  }
+]
