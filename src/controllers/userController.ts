@@ -73,11 +73,7 @@ export const updateUser = async (req: Request, res: Response) => {
     unsortedArr.sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
   );
 
-  await fsPromises.writeFile(
-    path.join(__dirname, "..", "models", "users.json"),
-    JSON.stringify(userDB.users)
-  );
-  //   writeFile(userDB.users);
+  writeFile(userDB.users);
 
   res.status(200).json({ "message": "User updated", "data": userDB.users });
 };
@@ -94,11 +90,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
   userDB.setUsers(updatedArr);
 
-  //   writeFile(userDB.users);
-  await fsPromises.writeFile(
-    path.join(__dirname, "..", "models", "users.json"),
-    JSON.stringify(userDB.users)
-  );
+  writeFile(userDB.users);
 
   res.status(200).json({
     "message": `User ${deleteUser.username} deleted successfully`,

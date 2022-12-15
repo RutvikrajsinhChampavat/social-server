@@ -8,6 +8,10 @@ import testRoute from "./routes/testRoutes";
 import { corsOption } from "./config/corsOptions";
 import authRoute from "./routes/authRoutes";
 import userRoute from "./routes/userRoutes";
+import { verifyToken } from "./middleware/verifyToken";
+import cookieparser from "cookie-parser";
+import refreshRoute from "./routes/refreshRoute";
+import { credentials } from "./middleware/credentials";
 
 dotenv.config();
 
@@ -19,10 +23,14 @@ const PORT: number = parseInt(process.env.PORT, 10) || 8081;
 
 const app: Express = express();
 
+app.use(credentials);
+
 // Cross Origin Resource Sharing
 app.use(cors(corsOption));
 
 app.use(express.urlencoded({ extended: true })); // used to get data from URL / form data
+
+app.use(cookieparser());
 
 app.use(express.json()); //used to get data from JSON type
 app.use(express.static(path.join(__dirname, "/public")));
@@ -31,6 +39,9 @@ app.use(helmet());
 
 app.use("/test", testRoute);
 app.use("/auth", authRoute);
+app.use("/refreshToken", refreshRoute);
+
+app.use(verifyToken);
 app.use("/users", userRoute);
 app.use("*", (_: Request, res: Response) =>
   res.status(404).json({ "message": "Invalid requet URL" })
