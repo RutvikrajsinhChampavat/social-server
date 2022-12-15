@@ -2,7 +2,7 @@ import allUsers from "../models/users.json";
 
 const userDB = {
   "users": allUsers,
-  "setUsers": function (data: USER[]) {
+  "setUsers": function (data: any) {
     this.users = data;
   },
 };
@@ -13,6 +13,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { ROLES } from "../config/roles_list";
 
 dotenv.config();
 
@@ -48,6 +49,9 @@ export const userRegister = async (req: Request, res: Response) => {
     const newUser = {
       "id": userID,
       "username": userName,
+      "roles": {
+        "user": ROLES.user,
+      },
       "password": hashedPwd,
     };
 
@@ -82,8 +86,14 @@ export const userLogin = async (req: Request, res: Response) => {
   const match = await bcrypt.compare(password, userFound?.password);
 
   if (match) {
+    const roles = Object.values(userFound.roles);
     const accessToken = jwt.sign(
-      { "username": userFound?.username },
+      {
+        "UserInfo": {
+          "username": userFound?.username,
+          "roles": roles,
+        },
+      },
       process.env.ACCESS_TOKEN_SECRET!,
       { expiresIn: "30s" }
     );
@@ -93,7 +103,6 @@ export const userLogin = async (req: Request, res: Response) => {
       process.env.REFRESH_TOKEN_SECRET!,
       { expiresIn: "1d" }
     );
-    console.log("userLogin  refreshToken", refreshToken);
 
     const otherUser = userDB.users.filter(
       (person) => person.id !== userFound?.id

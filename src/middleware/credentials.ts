@@ -8,8 +8,8 @@ export const credentials = (
 ) => {
   const origin = req.headers.origin;
 
-  //   if (origin && whiteList?.includes(origin)) {
-  //     res.header("Access-Control-Allow-Credentials", true);
-  //   }
+  if (origin && whiteList?.includes(origin)) {
+    res.header("Access-Control-Allow-Credentials");
+  }
   next();
 };

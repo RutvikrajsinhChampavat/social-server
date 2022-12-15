@@ -2,7 +2,7 @@ import allUsers from "../models/users.json";
 
 const userDB = {
   "users": allUsers,
-  "setUsers": function (data: USER[]) {
+  "setUsers": function (data: any) {
     this.users = data;
   },
 };
@@ -19,8 +19,6 @@ export const refreshToken = (req: Request, res: Response) => {
   if (!cookies?.jwt) return res.sendStatus(401);
 
   const refreshToken = cookies?.jwt;
-  console.log("refreshToken", refreshToken);
-  console.log("userDB", userDB.users[2]);
 
   const userFound = userDB?.users?.find(
     (user: USER) => user?.refreshToken === refreshToken
@@ -36,8 +34,15 @@ export const refreshToken = (req: Request, res: Response) => {
       if (err || decoded.username !== userFound.username)
         res.sendStatus(403).json({ "message": "Forbidden" });
 
+      const roles = Object.values(userFound.roles);
+
       const accessToken = jwt.sign(
-        { "username": decoded.username },
+        {
+          "UserInfo": {
+            "username": userFound?.username,
+            "roles": roles,
+          },
+        },
         process.env.ACCESS_TOKEN_SERET!,
         { expiresIn: "30s" }
       );

@@ -2,7 +2,7 @@ import allUsers from "../models/users.json";
 
 const userDB = {
   "users": allUsers,
-  "setUsers": function (data: USER[]) {
+  "setUsers": function (data: any) {
     this.users = data;
   },
 };
