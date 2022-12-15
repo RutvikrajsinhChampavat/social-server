@@ -1,6 +1,5 @@
 import { CorsOptions, CorsOptionsDelegate } from "cors";
-
-const whiteList = ["https://www.google.com"];
+import { whiteList } from "./allowedOrigins";
 
 export const corsOption: CorsOptions | CorsOptionsDelegate = {
   origin: (origin, callback) => {
