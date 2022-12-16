@@ -1,13 +1,9 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
+import { CustomRequest } from "../models/types";
 
 dotenv.config();
-
-interface CustomRequest extends Request {
-  username?: string | JwtPayload;
-  roles?: string;
-}
 
 export const verifyToken = (
   req: CustomRequest,
@@ -22,12 +18,16 @@ export const verifyToken = (
   const token = authHeader?.split(" ")[1];
 
   if (token) {
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, (err, decoded: any) => {
-      if (err) return res.status(403).json({ "message": err.message });
+    jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as string,
+      (err, decoded: any) => {
+        if (err) return res.status(403).json({ "message": err.message });
 
-      req.username = decoded?.UserInfo?.username;
-      req.roles = decoded?.UserInfo?.roles;
-      next();
-    });
+        req.username = decoded?.UserInfo?.username;
+        req.roles = decoded?.UserInfo?.roles;
+        next();
+      }
+    );
   }
 };

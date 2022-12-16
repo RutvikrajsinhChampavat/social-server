@@ -1,99 +1,92 @@
-import allUsers from "../models/users.json";
-
-const userDB = {
-  "users": allUsers,
-  "setUsers": function (data: any) {
-    this.users = data;
-  },
-};
-
-import fsPromises from "fs/promises";
-import path from "path";
 import { Request, Response } from "express";
+import { CustomRequest } from "../models/types";
+import { User } from "../models/User";
 
-const writeFile = async (data: USER[]) => {
-  await fsPromises.writeFile(
-    path.join(__dirname, "..", "models", "users.json"),
-    JSON.stringify(data)
-  );
+export const getUsers = async (_: Request, res: Response) => {
+  const users = await User.find();
+
+  res
+    .status(200)
+    .json({ "message": "Fetched all users successfully", "data": users });
 };
 
-export const getUsers = (_: Request, res: Response) => {
-  res.status(200).json({
-    "message": "All users fetched successfully!",
-    "data": userDB?.users,
-  });
-};
+export const getUser = async (req: Request, res: Response) => {
+  const username = req.params.username;
 
-export const getUser = (req: Request, res: Response) => {
-  const userID = parseInt(req.params.id, 10);
-
-  const user = userDB?.users?.find((person) => person.id === userID);
+  const user = await User.findOne({ "username": username });
 
   if (!user)
-    return res.status(400).json({ "message": "User does not exists!" });
+    return res
+      .status(400)
+      .json({ "message": `Could not find user with ${username} username` });
 
   res
     .status(200)
     .json({ "message": "User fetched successfully!", "data": user });
 };
 
-export const updateUser = async (req: Request, res: Response) => {
-  const updateID = parseInt(req.params.id, 10);
+export const updateUser = async (req: CustomRequest, res: Response) => {
+  const requestedUsername = req.body.username;
+  const username = req.username;
 
-  const existingUsername = userDB.users
-    .filter((user) => user.id !== updateID)
-    .find((user) => user.username === req.body.username);
-
-  if (existingUsername)
-    return res
-      .status(401)
-      .json({ "message": `User name ${req.body.username} is already taken` });
-
-  const updateUser = userDB.users.find((person) => person.id === updateID);
+  const updateUser = await User.findOne({
+    "username": username,
+  }).exec();
 
   if (!updateUser) {
-    return res.status(404).json({ "message": "Could not find requested user" });
+    return res.status(404).json({
+      "message": `Could not find user with ${username} username`,
+    });
   }
 
-  if (updateUser.username === req.body.username)
+  if (updateUser.username !== username)
+    return res.status(401).json({ "message": "Forbidden request" });
+
+  // check if existing user name and requested user name are same
+  if (requestedUsername === username)
     return res
       .status(400)
       .json({ "message": "You have entered the same user name" });
 
-  if (req.body.username) {
-    updateUser.username = req.body.username;
-  }
+  // check if requested user name exists
+  const existingUsername = await User.findOne({
+    "username": requestedUsername,
+  }).exec();
 
-  const filteredArr = userDB.users.filter((user) => user.id !== updateID);
+  if (existingUsername)
+    return res
+      .status(401)
+      .json({ "message": `User name ${requestedUsername} is already taken` });
 
-  const unsortedArr = [...filteredArr, updateUser];
+  updateUser.username = requestedUsername;
 
-  userDB.setUsers(
-    unsortedArr.sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
-  );
+  await updateUser.save();
 
-  writeFile(userDB.users);
-
-  res.status(200).json({ "message": "User updated", "data": userDB.users });
+  res
+    .status(200)
+    .json({ "message": "User updated successfully!", "data": updateUser });
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
-  const deleteID = parseInt(req.params.id);
+export const deleteUser = async (req: CustomRequest, res: Response) => {
+  const deleteUsername = req.params.username;
+  const username = req.username;
 
-  const deleteUser = userDB.users.find((person) => person.id === deleteID);
+  if (deleteUsername !== username)
+    return res.status(401).json({ "message": "Forbidden request" });
+
+  const deleteUser = await User.findOne({ "username": deleteUsername });
 
   if (!deleteUser)
-    return res.status(404).json({ "message": "Could not find requested user" });
+    return res.status(404).json({
+      "message": `Could not find user with ${deleteUsername} username`,
+    });
 
-  const updatedArr = userDB.users.filter((user) => user.id !== deleteID);
+  await User.findOneAndDelete({ "username": deleteUsername });
 
-  userDB.setUsers(updatedArr);
-
-  writeFile(userDB.users);
+  const users = await User.find().exec();
 
   res.status(200).json({
     "message": `User ${deleteUser.username} deleted successfully`,
-    "data": userDB.users,
+    "data": users,
   });
 };

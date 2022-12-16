@@ -10,12 +10,14 @@ import { verifyRoles } from "../middleware/verifyRoles";
 
 const userRouter = express.Router();
 
-userRouter.get("/", verifyRoles(ROLES.user, ROLES.user), getUsers);
+userRouter
+  .route("/")
+  .get(verifyRoles(ROLES.user, ROLES.user), getUsers)
+  .put(verifyRoles(ROLES.user, ROLES.user), updateUser);
 
 userRouter
-  .route("/:id")
+  .route("/:username")
   .get(verifyRoles(ROLES.user, ROLES.user), getUser)
-  .put(verifyRoles(ROLES.user, ROLES.user), updateUser)
   .delete(verifyRoles(ROLES.admin), deleteUser);
 
 export default userRouter;

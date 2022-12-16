@@ -12,6 +12,10 @@ import { verifyToken } from "./middleware/verifyToken";
 import cookieparser from "cookie-parser";
 import refreshRoute from "./routes/refreshRoute";
 import { credentials } from "./middleware/credentials";
+import mongoose from "mongoose";
+import { connectDB } from "./config/dbConn";
+
+connectDB();
 
 dotenv.config();
 
@@ -30,9 +34,10 @@ app.use(cors(corsOption));
 
 app.use(express.urlencoded({ extended: true })); // used to get data from URL / form data
 
+app.use(express.json()); // used to get data from JSON type
+
 app.use(cookieparser());
 
-app.use(express.json()); //used to get data from JSON type
 app.use(express.static(path.join(__dirname, "/public")));
 
 app.use(helmet());
@@ -53,6 +58,10 @@ app.get("/api", (_req: Request, res: Response) =>
 
 app.use(error500);
 
-app.listen(PORT, () =>
-  console.log(`Server is up and running on port : ${PORT}`)
-);
+mongoose.connection.once("open", () => {
+  console.log("Connected to MongoDB");
+
+  app.listen(PORT, () =>
+    console.log(`Server is up and running on port : ${PORT}`)
+  );
+});

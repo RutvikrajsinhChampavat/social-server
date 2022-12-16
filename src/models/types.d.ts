@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 interface USER {
   id: number;
   username: string;
@@ -9,4 +11,9 @@ interface USER {
 interface ROLE {
   "user": number;
   "admin"?: number;
+}
+
+interface CustomRequest extends Request {
+  username?: string;
+  roles?: Array<number>;
 }
