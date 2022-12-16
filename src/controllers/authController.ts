@@ -1,67 +1,71 @@
-import allUsers from "../models/users.json";
-
-const userDB = {
-  "users": allUsers,
-  "setUsers": function (data: any) {
-    this.users = data;
-  },
-};
-
-import fsPromises from "fs/promises";
-import path from "path";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { ROLES } from "../config/roles_list";
+import { User } from "../models/User";
 
 dotenv.config();
 
-const writeFile = async (data: USER[]) => {
-  await fsPromises.writeFile(
-    path.join(__dirname, "..", "models", "users.json"),
-    JSON.stringify(data)
-  );
-};
-
 export const userRegister = async (req: Request, res: Response) => {
-  const { userName, password } = req.body;
+  const { userName, fullName, password, avatar } = req.body;
 
-  if (!userName || !password) {
+  if (!userName || !password || !fullName)
     return res
       .status(400)
       .json({ "message": "Username and password are required" });
-  }
-
-  const dupUser = userDB?.users?.find(
-    (person: USER) => person?.username === userName
-  );
-
-  if (dupUser)
-    return res
-      .status(409)
-      .json({ "message": `Username ${userName} already exists` });
 
   try {
     const hashedPwd = await bcrypt.hash(password, 10);
-    const userID = userDB?.users?.length;
 
-    const newUser = {
-      "id": userID,
-      "username": userName,
-      "roles": {
-        "user": ROLES.user,
+    const accessToken = jwt.sign(
+      {
+        "UserInfo": {
+          "username": userName,
+          "roles": [2001],
+        },
       },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      { expiresIn: "10m" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        "UserInfo": {
+          "username": userName,
+          "roles": [2001],
+        },
+      },
+      process.env.REFRESH_TOKEN_SECRET as string,
+      { expiresIn: "1d" }
+    );
+
+    const newUser = await User.create({
+      "username": userName,
+      "fullname": fullName,
       "password": hashedPwd,
-    };
+      "avatar": avatar || null,
+      "bio": null,
+      "followercount": 0,
+      "followingcount": 0,
+      "postcount": 0,
+      "refreshtoken": refreshToken,
+    });
 
-    userDB.setUsers([...userDB.users, newUser]);
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
-    writeFile(userDB.users);
-
-    res.status(201).json({ "success": `New user ${userName} created !` });
+    res.status(201).json({
+      "success": `New user ${newUser.username} created !`,
+      "accessToken": accessToken,
+    });
   } catch (error: any) {
-    res.status(500).json({ "message": error.message });
+    if (error.code === 11000)
+      error.message = `User name ${userName} already exists`;
+    res.status(400).json({ "message": error.message });
   }
 };
 
@@ -74,19 +78,17 @@ export const userLogin = async (req: Request, res: Response) => {
       .json({ "message": "Username and password are required" });
   }
 
-  const userFound = userDB.users.find(
-    (user: USER) => user.username === userName
-  );
+  const userFound = await User.findOne({ username: userName });
 
   if (!userFound)
     return res
       .status(401)
       .json({ "message": `Could not find user with usernmae : ${userName}` });
 
-  const match = await bcrypt.compare(password, userFound?.password);
+  const match = await bcrypt.compare(password, userFound.password);
 
   if (match) {
-    const roles = Object.values(userFound.roles);
+    const roles = Object.values(userFound.roles as object);
     const accessToken = jwt.sign(
       {
         "UserInfo": {
@@ -94,30 +96,29 @@ export const userLogin = async (req: Request, res: Response) => {
           "roles": roles,
         },
       },
-      process.env.ACCESS_TOKEN_SECRET!,
-      { expiresIn: "30s" }
+      process.env.ACCESS_TOKEN_SECRET as string,
+      { expiresIn: "10m" }
     );
 
     const refreshToken = jwt.sign(
-      { "username": userFound?.username },
-      process.env.REFRESH_TOKEN_SECRET!,
+      {
+        "UserInfo": {
+          "username": userFound?.username,
+          "roles": roles,
+        },
+      },
+      process.env.REFRESH_TOKEN_SECRET as string,
       { expiresIn: "1d" }
     );
 
-    const otherUser = userDB.users.filter(
-      (person) => person.id !== userFound?.id
-    );
+    userFound.refreshtoken = refreshToken;
 
-    const currentUser = { ...userFound, refreshToken };
-
-    userDB.setUsers([...otherUser, currentUser]);
-
-    await writeFile(userDB.users);
+    await userFound.save();
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       sameSite: "none",
-      secure: true,
+      secure: false,
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -130,36 +131,34 @@ export const userLogin = async (req: Request, res: Response) => {
   }
 };
 
-export const userLogout = (req: Request, res: Response) => {
+export const userLogout = async (req: Request, res: Response) => {
   const cookies = req.cookies;
 
   if (!cookies?.jwt) return res.sendStatus(204);
 
   const refreshToken = cookies?.jwt;
-  const foundUser = userDB?.users?.find(
-    (person) => person.refreshToken === refreshToken
-  );
+
+  const foundUser = await User.findOne({ refreshtoken: refreshToken }).exec();
 
   if (!foundUser) {
     res.clearCookie("jwt", {
       httpOnly: true,
       sameSite: "none",
-      secure: true,
+      secure: false,
     });
-    return res.sendStatus(204);
+
+    return res.status(200).json({ "message": "Logged out successfully" });
   }
 
-  const outherUsers = userDB?.users?.filter(
-    (user) => user.refreshToken !== refreshToken
-  );
+  foundUser.refreshtoken = "";
 
-  const currentUser = { ...foundUser, refreshToken: "" };
+  await foundUser.save();
 
-  userDB?.setUsers([...outherUsers, currentUser]);
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: false,
+  });
 
-  writeFile(userDB?.users);
-
-  res.clearCookie("jwt", { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
-
-  res.sendStatus(204);
+  res.status(200).json({ "message": "Logged out successfully" });
 };

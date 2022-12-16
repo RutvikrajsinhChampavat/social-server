@@ -1,8 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-
-interface CustomRequest extends Request {
-  roles?: number[];
-}
+import { Response, NextFunction } from "express";
+import { CustomRequest } from "../models/types";
 
 export const verifyRoles = (...allowedRoles: number[]) => {
   return (req: CustomRequest, res: Response, next: NextFunction) => {
