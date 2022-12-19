@@ -14,6 +14,7 @@ import refreshRoute from "./routes/refreshRoute";
 import { credentials } from "./middleware/credentials";
 import mongoose from "mongoose";
 import { connectDB } from "./config/dbConn";
+import postRoute from "./routes/postRoute";
 
 connectDB();
 
@@ -48,6 +49,8 @@ app.use("/refreshToken", refreshRoute);
 
 app.use(verifyToken);
 app.use("/users", userRoute);
+app.use("/posts", postRoute);
+
 app.use("*", (_: Request, res: Response) =>
   res.status(404).json({ "message": "Invalid requet URL" })
 );
