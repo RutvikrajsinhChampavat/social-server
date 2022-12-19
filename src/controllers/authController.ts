@@ -9,6 +9,13 @@ dotenv.config();
 export const userRegister = async (req: Request, res: Response) => {
   const { userName, fullName, password, avatar } = req.body;
 
+  const whiteSpaceRegEx = /\s/g;
+
+  if (whiteSpaceRegEx.test(userName))
+    return res
+      .status(400)
+      .json({ "message": "User name should not contain any white spaces." });
+
   if (!userName || !password || !fullName)
     return res
       .status(400)
@@ -25,7 +32,7 @@ export const userRegister = async (req: Request, res: Response) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "10m" }
+      { expiresIn: "5m" }
     );
 
     const refreshToken = jwt.sign(
@@ -97,7 +104,7 @@ export const userLogin = async (req: Request, res: Response) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "10m" }
+      { expiresIn: "5m" }
     );
 
     const refreshToken = jwt.sign(
