@@ -66,7 +66,7 @@ export const userRegister = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({
-      "success": `New user ${newUser.username} created !`,
+      "message": `New user ${newUser.username} created !`,
       "accessToken": accessToken,
     });
   } catch (error: any) {
@@ -129,12 +129,22 @@ export const userLogin = async (req: Request, res: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    const resUser = {
+      "userName": userFound.username,
+      "fullName": userFound.fullname,
+      "avatar": userFound.avatar,
+      "postCount": userFound.postcount,
+      "followingCount": userFound.followingcount,
+      "followersCount": userFound.followercount,
+    };
+
     res.status(200).json({
-      "success": `Logged in as ${userName}`,
+      "message": `Logged in as ${userName}`,
+      "user": resUser,
       "accessToken": accessToken,
     });
   } else {
-    res.status(401).json({ "error": "Credentials do not match" });
+    res.status(401).json({ "error": "Username and password do not match" });
   }
 };
 
