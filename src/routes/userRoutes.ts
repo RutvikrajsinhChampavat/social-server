@@ -9,6 +9,7 @@ import {
   unFollowUser,
   getFollowing,
   getFollowers,
+  getProfile,
 } from "../controllers/userController";
 import { verifyRoles } from "../middleware/verifyRoles";
 
@@ -22,6 +23,8 @@ userRouter
 userRouter.route("/following").get(verifyRoles(ROLES.user), getFollowing);
 
 userRouter.route("/followers").get(verifyRoles(ROLES.user), getFollowers);
+
+userRouter.route("/profile").get(verifyRoles(ROLES.user), getProfile);
 
 userRouter
   .route("/:username")
