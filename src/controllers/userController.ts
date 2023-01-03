@@ -21,9 +21,18 @@ export const getUser = async (req: Request, res: Response) => {
       .status(400)
       .json({ "message": `Could not find user with ${username} username` });
 
+  const userData = {
+    "username": user.username,
+    "fullName": user.fullname,
+    "avatar": user.avatar,
+    "postCount": user.postcount,
+    "followingCount": user.followingcount,
+    "followersCount": user.followercount,
+  };
+
   res
     .status(200)
-    .json({ "message": "User fetched successfully!", "data": user });
+    .json({ "message": "User fetched successfully!", "data": userData });
 };
 
 export const updateUser = async (req: CustomRequest, res: Response) => {

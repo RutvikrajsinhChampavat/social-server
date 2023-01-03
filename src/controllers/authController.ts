@@ -67,6 +67,16 @@ export const userRegister = async (req: Request, res: Response) => {
 
     res.status(201).json({
       "message": `New user ${newUser.username} created !`,
+      "user": {
+        "username": userName,
+        "fullName": fullName,
+        "password": hashedPwd,
+        "avatar": avatar || null,
+        "bio": null,
+        "followerCount": 0,
+        "followingCount": 0,
+        "postcount": 0,
+      },
       "accessToken": accessToken,
     });
   } catch (error: any) {
@@ -130,7 +140,7 @@ export const userLogin = async (req: Request, res: Response) => {
     });
 
     const resUser = {
-      "userName": userFound.username,
+      "username": userFound.username,
       "fullName": userFound.fullname,
       "avatar": userFound.avatar,
       "postCount": userFound.postcount,
@@ -151,7 +161,7 @@ export const userLogin = async (req: Request, res: Response) => {
 export const userLogout = async (req: Request, res: Response) => {
   const cookies = req.cookies;
 
-  if (!cookies?.jwt) return res.sendStatus(204);
+  // if (!cookies?.jwt) return res.sendStatus(204);
 
   const refreshToken = cookies?.jwt;
 
