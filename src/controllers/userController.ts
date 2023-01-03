@@ -35,6 +35,30 @@ export const getUser = async (req: Request, res: Response) => {
     .json({ "message": "User fetched successfully!", "data": userData });
 };
 
+export const getProfile = async (req: CustomRequest, res: Response) => {
+  const username = req.username;
+
+  const user = await User.findOne({ "username": username });
+
+  if (!user)
+    return res
+      .status(400)
+      .json({ "message": `Could not find user with ${username} username` });
+
+  const userData = {
+    "username": user.username,
+    "fullName": user.fullname,
+    "avatar": user.avatar,
+    "postCount": user.postcount,
+    "followingCount": user.followingcount,
+    "followersCount": user.followercount,
+  };
+
+  res
+    .status(200)
+    .json({ "message": "User fetched successfully!", "data": userData });
+};
+
 export const updateUser = async (req: CustomRequest, res: Response) => {
   const requestedUsername = req.body.username;
   const username = req.username;
