@@ -32,7 +32,7 @@ export const userRegister = async (req: Request, res: Response) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "5m" }
+      { expiresIn: "30m" }
     );
 
     const refreshToken = jwt.sign(
@@ -114,7 +114,7 @@ export const userLogin = async (req: Request, res: Response) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "5m" }
+      { expiresIn: "30m" }
     );
 
     const refreshToken = jwt.sign(

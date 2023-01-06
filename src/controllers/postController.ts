@@ -1,6 +1,7 @@
 import { CustomRequest } from "../models/types";
 import { Request, Response } from "express";
 import { Post } from "../models/Post";
+import { Relation } from "../models/Following";
 
 export const addPost = async (req: CustomRequest, res: Response) => {
   const username = req.username;
@@ -26,12 +27,31 @@ export const addPost = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export const getUserPosts = async (req: CustomRequest, res: Response) => {
+export const getPosts = async (req: CustomRequest, res: Response) => {
   const username = req.username;
+
+  try {
+    const userPosts = await Post.find({
+      "user": username,
+    });
+
+    res
+      .status(200)
+      .json({ "message": "Posts fetched successfully", "data": userPosts });
+  } catch (error: any) {
+    res.status(400).json({
+      "message": `Somethinh went wrong while fetched posts : ${error.message}`,
+    });
+  }
+};
+
+export const getUserPosts = async (req: Request, res: Response) => {
   const paramUser = req.params.username;
 
   try {
-    const userPosts = await Post.find({ "user": paramUser || username });
+    const userPosts = await Post.find({
+      "user": paramUser,
+    });
 
     res
       .status(200)
@@ -88,11 +108,13 @@ export const deletePost = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export const getFollowingPosts = async (req: Request, res: Response) => {
-  const follwingUsers = req.body.users;
+export const getFollowingPosts = async (req: CustomRequest, res: Response) => {
+  const username = req.username;
 
   try {
-    const posts = await Post.find({ "user": follwingUsers });
+    const relation = await Relation.findOne({ "user": username });
+
+    const posts = await Post.find({ "user": relation?.following });
 
     res
       .status(200)
