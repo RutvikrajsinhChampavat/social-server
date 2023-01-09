@@ -1,7 +1,7 @@
 import { CustomRequest } from "../models/types";
 import { Request, Response } from "express";
 import { Post } from "../models/Post";
-import { Relation } from "../models/Following";
+import { Relation, RELATION_USER } from "../models/Following";
 
 export const addPost = async (req: CustomRequest, res: Response) => {
   const username = req.username;
@@ -114,7 +114,9 @@ export const getFollowingPosts = async (req: CustomRequest, res: Response) => {
   try {
     const relation = await Relation.findOne({ "user": username });
 
-    const posts = await Post.find({ "user": relation?.following });
+    const posts = await Post.find({
+      "user": relation?.following?.map((user: RELATION_USER) => user.username),
+    });
 
     res
       .status(200)

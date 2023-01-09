@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Response } from "express";
-import { Relation } from "../models/Following";
+import { Relation, RELATION_USER } from "../models/Following";
 import { CustomRequest } from "../models/types";
 import { User } from "../models/User";
 
@@ -11,6 +12,7 @@ export const followUser = async (req: CustomRequest, res: Response) => {
     return res.status(400).json({ "message": "You can not follow yourself" });
 
   const followUserInDB = await User.findOne({ "username": followUser });
+  const userInDB = await User.findOne({ "username": username });
 
   if (!followUserInDB?.username)
     return res
@@ -21,13 +23,22 @@ export const followUser = async (req: CustomRequest, res: Response) => {
     const userRelatoins = await Relation.findOne({ "user": username });
     const followUserRelatoins = await Relation.findOne({ "user": followUser });
 
-    if (userRelatoins?.following?.includes(followUser))
+    if (
+      userRelatoins?.following?.some(
+        (user: RELATION_USER) => user.username === followUser
+      )
+    )
       return res
         .status(400)
         .json({ "message": `You are already following ${followUser}` });
 
     if (userRelatoins?.user) {
-      userRelatoins?.following.push(followUser);
+      const followUserObj = {
+        username: followUserInDB?.username,
+        avatar: followUserInDB?.avatar,
+      };
+
+      userRelatoins?.following?.push(followUserObj);
 
       await Relation.updateOne(
         { "user": username },
@@ -45,20 +56,30 @@ export const followUser = async (req: CustomRequest, res: Response) => {
         "data": updatedRelatoins,
       });
     } else {
+      const followUserObj = {
+        username: followUserInDB?.username,
+        avatar: followUserInDB?.avatar,
+      };
+
       const newUserRelation = await Relation.create({
         "user": username,
-        "following": [followUser],
+        "following": [followUserObj],
         "followers": [],
       });
 
       res.status(200).json({
-        "message": "Successfully follwed user",
+        "message": "Successfully followed user",
         "data": newUserRelation,
       });
     }
 
     if (followUserRelatoins?.user) {
-      followUserRelatoins?.followers.push(username);
+      const userObj = {
+        username: userInDB?.username,
+        avatar: userInDB?.avatar,
+      };
+
+      followUserRelatoins?.followers?.push(userObj);
 
       await Relation.updateOne(
         { "user": followUser },
@@ -69,10 +90,15 @@ export const followUser = async (req: CustomRequest, res: Response) => {
         }
       );
     } else {
+      const userObj = {
+        username: userInDB?.username,
+        avatar: userInDB?.avatar,
+      };
+
       await Relation.create({
         "user": followUser,
         "following": [],
-        "followers": [username],
+        "followers": [userObj],
       });
     }
   } catch (error: any) {
@@ -92,13 +118,19 @@ export const unFollowUser = async (req: CustomRequest, res: Response) => {
   try {
     const relatoins = await Relation.findOne({ "user": username });
 
-    if (!relatoins?.following?.includes(unFollowUser))
+    if (
+      !relatoins?.following?.some(
+        (user: RELATION_USER) => user.username === unFollowUser
+      )
+    )
       return res.status(400).json({
         "message": `You are not following ${unFollowUser}`,
       });
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     const updatedFollowings = relatoins?.following.filter(
-      (user) => user !== unFollowUser
+      (user: RELATION_USER) => user.username !== unFollowUser
     );
 
     await Relation.updateOne(
